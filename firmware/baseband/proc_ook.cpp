@@ -49,8 +49,8 @@ void OOKProcessor::execute(const buffer_c8_t& buffer) {
 						} else if (pause_counter == 1) {
 							if (repeat_counter < repeat) {
 								// Repeat
-								bit_pos = 0;
-								cur_bit = shared_memory.bb_data.data[0] & 0x80;
+								bit_pos = repeat_skip_bits;
+								cur_bit = shared_memory.bb_data.data[repeat_skip_bits >> 3] & 0x80;
 								txprogress_message.progress = repeat_counter + 1;
 								txprogress_message.done = false;
 								shared_memory.application_queue.push(txprogress_message);
@@ -81,11 +81,20 @@ void OOKProcessor::execute(const buffer_c8_t& buffer) {
 		}
 		
 		if (cur_bit) {
-			phase = (phase + 200);			// What ?
-			sphase = phase + (64 << 18);
+			// let's say target carrier freq is fc,
+			// OOK_SAMPLERATE / fc = prescaler
+			// so we have to loop over the sin table in n='prescaler' steps
+			// sin table size is 256
+			// 256 / prescaler = sin_carrier_step
+			phase += sin_carrier_step;
 
-			re = (sine_table_i8[(sphase & 0x03FC0000) >> 18]);
-			im = (sine_table_i8[(phase & 0x03FC0000) >> 18]);
+			// phase shift between I and Q here is 90°:
+			// phase + 0 = 0°, phase + 64 = +PI/2, and so on.
+			// maybe this would be a nice parameter to add to the OOKConfigure message...
+			sphase = phase + 64;
+
+			re = (sine_table_i8[sphase & 0xFF]);
+			im = (sine_table_i8[phase & 0xFF]);
 		} else {
 			re = 0;
 			im = 0;
@@ -100,6 +109,8 @@ void OOKProcessor::on_message(const Message* const p) {
 	
 	if (message.id == Message::ID::OOKConfigure) {
 		samples_per_bit = message.samples_per_bit / 10;
+		repeat_skip_bits = message.repeat_skip_bits;
+		sin_carrier_step = message.sin_carrier_step;
 		repeat = message.repeat - 1;
 		length = message.stream_length;
 		pause = message.pause_symbols + 1;
