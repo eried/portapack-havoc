@@ -302,10 +302,7 @@ SetUIView::SetUIView(NavigationView& nav) {
 	}
 
 	checkbox_speaker.on_select = [this](Checkbox&, bool v) {
-    		if (v) audio::output::speaker_mute();		//Just mute audio if speaker is disabled
-
-			persistent_memory::set_config_speaker(v);	//Store Speaker status
-
+		persistent_memory::set_config_speaker(v);	    //Store Speaker status
         StatusRefreshMessage message { };				//Refresh status bar with/out speaker
         EventDispatcher::send_message(message);
     };
@@ -330,13 +327,20 @@ SetAudioView::SetAudioView(NavigationView& nav) {
 	add_children({
 		&labels,
 		&field_tone_mix,
+		&checkbox_speaker_enabled,
 		&button_ok
 	});
 
 	field_tone_mix.set_value(persistent_memory::tone_mix());
+
+	checkbox_speaker_enabled.set_value(persistent_memory::speaker_enabled);
 	
 	button_ok.on_select = [&nav, this](Button&) {
 		persistent_memory::set_tone_mix(field_tone_mix.value());
+		portapack::set_speaker_mode(checkbox_speaker_enabled.value());
+        StatusRefreshMessage message { };				//Refresh status bar with green/grey speaker
+        EventDispatcher::send_message(message);
+		
 		nav.pop();
 	};
 }
