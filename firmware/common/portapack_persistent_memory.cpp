@@ -229,7 +229,8 @@ void set_playdead_sequence(const uint32_t new_value) {
 
 bool speaker_enabled() {
 	return data->ui_config & (1 << 24);
-
+}
+	
 bool hide_clock() { // clock hidden from main menu
 	return data->ui_config & (1 << 25);
 }
@@ -264,7 +265,8 @@ uint32_t config_backlight_timer() {
 
 void set_speaker_enabled(bool v) {
 	data->ui_config = (data->ui_config & ~(1 << 24)) | (v << 24);
-
+}
+	
 void set_clock_hidden(bool v) {
 	data->ui_config = (data->ui_config & ~(1 << 25)) | (v << 25);
 }
