@@ -96,6 +96,7 @@ bool get_antenna_bias() {
 bool speaker_mode { false };
  void set_speaker_mode(const bool v) {
  	speaker_mode = v;
+    persistent_memory::set_speaker_enabled(v); // store state in persistent_memory
  	if (speaker_mode)
  		audio::output::speaker_unmute();
  	else
@@ -390,6 +391,8 @@ bool init() {
 
 	LPC_CREG->DMAMUX = portapack::gpdma_mux;
 	gpdma::controller.enable();
+
+    set_speaker_mode(persistent_memory::speaker_enabled);
 
 	return true;
 }
